@@ -1,15 +1,13 @@
 import React, { useState } from 'react';
-import Grid from './Graph';  
+import Grid from './Graph';
 
 function App() {
-  // Width and height handled here for now
-  const [width] = useState(3);
-  const [height] = useState(3);
+  const [width] = useState(4);
+  const [height] = useState(4);
 
   return (
     <div className="App">
-      <h1>Puzzle Generator</h1>
-      {/* Pass the width and height to Grid */}
+      <h1 style={{ textAlign: 'center', color: 'white' }}>Puzzle Generator</h1>
       <Grid width={width} height={height} />
     </div>
   );

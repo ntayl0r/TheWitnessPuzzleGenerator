@@ -7,8 +7,14 @@ function App() {
 
   return (
     <div className="App">
-      <h1 style={{ textAlign: 'center', color: 'white' }}>Puzzle Generator</h1>
-      <Grid width={width} height={height} />
+      <div style={{ textAlign: 'center', marginTop: '20x' }}>
+        <h1 style={{ color: 'white' }}>Puzzle Generator</h1>
+      </div>
+      <div 
+      //Grid initialization placing
+      style={{ display: 'flex', justifyContent: 'flex-start', marginTop: '40px', paddingRight: '55px' } }> 
+        <Grid width={width} height={height} />
+      </div>
     </div>
   );
 }

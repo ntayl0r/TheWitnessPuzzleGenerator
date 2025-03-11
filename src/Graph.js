@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 
 const Grid = ({ width, height }) => {
   const [path, setPath] = useState([]);
@@ -39,24 +39,68 @@ const Grid = ({ width, height }) => {
   const isNodeInPath = (row, col) =>
     path.some((node) => node.row === row && node.col === col);
 
-  // Cycle through colors on right-click - make color rule
+  // Cycle through colors on right-click - impliment color rule
   const handleRightClick = (e, row, col) => {
-    e.preventDefault(); // Prevent the default right-click menu
-    setColors(prevColors => {
+    e.preventDefault();
+    setColors((prevColors) => {
       const newColors = [...prevColors];
       const currentColor = newColors[row][col];
       // Color cycle: grey -> red -> green -> grey
-      if (currentColor === 'grey') {
-        newColors[row][col] = 'red';
-      } else if (currentColor === 'red') {
-        newColors[row][col] = 'green';
-      } else {
-        newColors[row][col] = 'grey';
-      }
+      newColors[row][col] =
+        currentColor === 'grey' ? 'red' : currentColor === 'red' ? 'green' : 'grey';
       return newColors;
     });
   };
 
+  /** SAVE PUZZLE STATE TO FLASK */
+  const savePuzzleState = useCallback(async () => {
+    const puzzleData = {
+      squares: colors,  // Updated square colors
+      nodes: path,      // Updated nodes (path)
+      edges: []         // Future: Store edges here
+    };
+  
+    try {
+      const response = await fetch('http://127.0.0.1:5000/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(puzzleData)
+      });
+  
+      const result = await response.json();
+      console.log("Saved puzzle state:", result.message);
+    } catch (error) {
+      console.error("Error saving puzzle:", error);
+    }
+  }, [colors, path]);  // Save when colors or path change
+
+   /** LOAD PUZZLE STATE FROM FLASK */
+  const loadPuzzleState = useCallback(async () => {
+    try {
+      const response = await fetch('http://127.0.0.1:5000/load');
+      const data = await response.json();
+  
+      // console.log("Fetched puzzle state:", data); // Debugging output
+  
+      // Only update if Flask returns valid data
+      if (data.squares && data.squares.length > 0) {
+        setColors(data.squares);
+      }
+  
+      if (data.nodes && data.nodes.length > 0) {
+        setPath(data.nodes);
+      }
+  
+    } catch (error) {
+      console.error("Error loading puzzle:", error);
+    }
+  }, []);
+
+    /** Automatically save when colors or path change */
+    useEffect(() => {
+      savePuzzleState(); // Automatically save when colors or path change
+    }, [savePuzzleState]); 
+  
   return (
     <div
       style={{

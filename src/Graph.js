@@ -4,8 +4,14 @@ const Grid = ({ width, height }) => {
   const [path, setPath] = useState([]);
   const [isDrawing, setIsDrawing] = useState(false);
 
+  // Store the color of each square in a 2D array
+  const [colors, setColors] = useState(
+    Array.from({ length: height }).map(() => Array(width).fill('grey'))  // Default color is grey - square has no rule
+  );
+
+
   const handleNodeClick = (row, col) => {
-    if (!isDrawing) {
+    if (!isDrawing) { 
       // Start drawing
       setPath([{ row, col }]);
       setIsDrawing(true);
@@ -33,6 +39,24 @@ const Grid = ({ width, height }) => {
   const isNodeInPath = (row, col) =>
     path.some((node) => node.row === row && node.col === col);
 
+  // Cycle through colors on right-click - make color rule
+  const handleRightClick = (e, row, col) => {
+    e.preventDefault(); // Prevent the default right-click menu
+    setColors(prevColors => {
+      const newColors = [...prevColors];
+      const currentColor = newColors[row][col];
+      // Color cycle: grey -> red -> green -> grey
+      if (currentColor === 'grey') {
+        newColors[row][col] = 'red';
+      } else if (currentColor === 'red') {
+        newColors[row][col] = 'green';
+      } else {
+        newColors[row][col] = 'grey';
+      }
+      return newColors;
+    });
+  };
+
   return (
     <div
       style={{
@@ -58,10 +82,14 @@ const Grid = ({ width, height }) => {
           Array.from({ length: width }).map((_, cellCol) => (
             <div
               key={`cell-${cellRow}-${cellCol}`}
+              onClick={() => handleNodeClick(cellRow, cellCol)}
+              onMouseEnter={() => handleMouseEnter(cellRow, cellCol)}
+              onContextMenu={(e) => handleRightClick(e, cellRow, cellCol)} // Right-click to change color
               style={{
-                backgroundColor: 'gray',
+                backgroundColor: colors[cellRow][cellCol], // Use color state
                 width: '70px',  // Square width
                 height: '70px', // Square height
+                cursor: 'pointer',
               }}
             />
           ))
@@ -87,7 +115,7 @@ const Grid = ({ width, height }) => {
                 style={{
                   width: '10px',
                   height: '10px',
-                  backgroundColor: isInPath ? 'blue' : 'black',
+                  backgroundColor: isInPath ? 'white' : 'black', //Node color 
                   borderRadius: '50%',
                   position: 'absolute',
                   top: row * 110, // Node spacing relative to the rest of the nodes (row) 
@@ -126,7 +154,7 @@ const Grid = ({ width, height }) => {
                 key={`line-${index}`}
                 style={{
                   position: 'absolute',
-                  backgroundColor: 'blue',
+                  backgroundColor: 'white', // Path color 
                   top: Math.min(y1, y2), 
                   left: Math.min(x1, x2),
                   width: isHorizontal ? Math.abs(x2 - x1) : 5,

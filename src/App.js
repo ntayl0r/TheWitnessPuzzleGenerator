@@ -2,12 +2,12 @@ import React, { useState } from 'react';
 import Grid from './Graph';
 
 function App() {
-  const [width] = useState(4);
-  const [height] = useState(4);
+  const [width] = useState(5);
+  const [height] = useState(5);
 
   return (
     <div className="App">
-      <div style={{ textAlign: 'center', marginTop: '20x' }}>
+      <div style={{ textAlign: 'center', marginTop: '10x' }}>
         <h1 style={{ color: 'white' }}>Puzzle Generator</h1>
       </div>
       <div 

@@ -1,34 +1,78 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+from validate import bfs_over_squares
 
 app = Flask(__name__)
 CORS(app)  # Allow communication with React
 
-# Store the puzzle state in memory (for now)
+# Store the puzzle state in memory 
 puzzle_state = {
     "squares": [],  # Stores the colors of squares
-    "nodes": [],    # Stores occupied nodes
-    "edges": []     # Stores edges between nodes
+    "nodes": [],    # Stores occupied nodes (path)
+    "edges": []     # Stores edge list 
 }
 
+# Undirected edge list that uses row major ordering to assign unique index number to each node 
+def build_edge_list(path, grid_cols):
+    edge_list = []
+    
+    for i in range(1, len(path)):
+        prev = path[i - 1]
+        curr = path[i]
+
+        prev_index = prev["row"] * (grid_cols + 1) + prev["col"]
+        curr_index = curr["row"] * (grid_cols + 1) + curr["col"]
+
+        edge = tuple(sorted((prev_index, curr_index)))  
+        edge_list.append(edge)
+
+    return edge_list
+
+
+# Receive puzzle state from React, generate edge list, and save it.
 @app.route('/save', methods=['POST'])
 def save_puzzle():
-    """
-    Receive puzzle state from React and save it.
-    """
     data = request.json  # Get JSON data from the request
     puzzle_state["squares"] = data.get("squares", [])
     puzzle_state["nodes"] = data.get("nodes", [])
-    puzzle_state["edges"] = data.get("edges", [])
+
+    # Accounts for non-square grids
+    grid_rows = len(puzzle_state["squares"])
+    grid_cols = len(puzzle_state["squares"][0]) if grid_rows > 0 else 0
+
+    # Ensure squares are initialized with color
+    for row in range(grid_rows):
+        for col in range(grid_cols):
+            if isinstance(puzzle_state["squares"][row][col], str):  # If it's a color string
+                puzzle_state["squares"][row][col] = {
+                    "color": puzzle_state["squares"][row][col]
+                }
+
+    # Generate edge list
+    puzzle_state["edges"] = build_edge_list(puzzle_state["nodes"], grid_cols)
 
     return jsonify({"message": "Puzzle state saved successfully"}), 200
 
+# Send the stored puzzle state back to React and display squares + BFS stats.
 @app.route('/load', methods=['GET'])
 def load_puzzle():
-    """
-    Send the stored puzzle state back to React.
-    """
-    return jsonify(puzzle_state), 200
+    grid_rows = len(puzzle_state["squares"])
+    grid_cols = len(puzzle_state["squares"][0]) if grid_rows > 0 else 0
+
+    bfs_count = 0
+    if grid_rows > 0 and grid_cols > 0:
+        bfs_count = bfs_over_squares(puzzle_state["squares"], puzzle_state["edges"])
+
+    # Flask interface 
+    response = {
+        "bfs_visited_count": bfs_count,  
+        "squares": puzzle_state["squares"],
+        "nodes": puzzle_state["nodes"],
+        "edges": puzzle_state["edges"],
+    }
+
+    return jsonify(response), 200
+
 
 if __name__ == '__main__':
     app.run(debug=True)

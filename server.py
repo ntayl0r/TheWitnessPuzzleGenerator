@@ -1,5 +1,8 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+from flask import Response
+from collections import OrderedDict
+import json
 from validate import bfs_over_squares
 
 app = Flask(__name__)
@@ -53,25 +56,26 @@ def save_puzzle():
 
     return jsonify({"message": "Puzzle state saved successfully"}), 200
 
+
 # Send the stored puzzle state back to React and display squares + BFS stats.
 @app.route('/load', methods=['GET'])
 def load_puzzle():
     grid_rows = len(puzzle_state["squares"])
     grid_cols = len(puzzle_state["squares"][0]) if grid_rows > 0 else 0
 
-    bfs_count = 0
+    region_count = 0
     if grid_rows > 0 and grid_cols > 0:
-        bfs_count = bfs_over_squares(puzzle_state["squares"], puzzle_state["edges"])
+        region_count = bfs_over_squares(puzzle_state["squares"], puzzle_state["edges"])
 
-    # Flask interface 
-    response = {
-        "bfs_visited_count": bfs_count,  
-        "squares": puzzle_state["squares"],
-        "nodes": puzzle_state["nodes"],
-        "edges": puzzle_state["edges"],
-    }
+    # Build response key order - JSON defaults to alphabetical  
+    response_data = OrderedDict([
+        ("region_count", region_count),
+        ("edges", puzzle_state["edges"]),
+        ("squares", puzzle_state["squares"]),
+        ("nodes", puzzle_state["nodes"])
+    ])
 
-    return jsonify(response), 200
+    return Response(json.dumps(response_data), mimetype='application/json')
 
 
 if __name__ == '__main__':

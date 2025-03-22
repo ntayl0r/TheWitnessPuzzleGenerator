@@ -16,34 +16,36 @@ def get_square_edges(row, col, cols):
 
 
 def bfs_over_squares(squares, edge_list):
-    START_ROW = 0
-    START_COL = 0 
     rows = len(squares)
     cols = len(squares[0])
+    region = []
     regions = [] 
 
     #Tracks visited squares for BFS 
-    visited = [[False for _ in range(cols)] for _ in range(rows)] 
-    queue = deque()
-    queue.append((START_ROW, START_COL))
-    count = 1  # Count the starting square
-    visited[START_ROW][START_COL] = True     #thisll be looped 
+    visited = [[False for _ in range(cols)] for _ in range(rows)] #  Need to visit all regions 
+    queue = deque() # Need to visit all squares in a region 
+    directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]  # Directions: up, down, left, right
 
-    # Directions: up, down, left, right
-    directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+    # Region detecton - starts at next unvisited square if one or more squares is cut off by our path of edges 
+    for row_visited in range(rows):
+        for col_visited in range(cols):
+            if not visited[row_visited][col_visited]: 
 
-    while queue:
-        row, col = queue.popleft()
-        square_edges = get_square_edges(row, col, cols)
+                # BFS square search 
+                visited[row_visited][col_visited] = True     
+                queue.append((row_visited, col_visited))
+                while queue:
+                    row, col = queue.popleft()
+                    square_edges = get_square_edges(row, col, cols)
 
-        for (dr, dc), edge in zip(directions, square_edges):
-            r, c = row + dr, col + dc
-            if 0 <= r < rows and 0 <= c < cols:
-                if edge not in edge_list:
-                    if not visited[r][c]:
-                        visited[r][c] = True
-                        queue.append((r, c))
-                        count += 1
+                    for (dr, dc), edge in zip(directions, square_edges):
+                        r, c = row + dr, col + dc
+                        if 0 <= r < rows and 0 <= c < cols:
+                            if edge not in edge_list:
+                                if not visited[r][c]:
+                                    visited[r][c] = True
+                                    queue.append((r, c))
+                                    region.append((r,c))
+                regions.append(region)
 
-    return count
-
+    return len(regions)

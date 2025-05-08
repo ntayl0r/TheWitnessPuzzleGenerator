@@ -48,7 +48,9 @@ const Grid = ({ width, height }) => {
 
     const puzzleData = {
       squares,
-      nodes: path
+      nodes: path,
+      startNode: startNode,
+      finishNode: finishNode
     };
 
     fetch('http://127.0.0.1:5000/save', {

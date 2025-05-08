@@ -14,6 +14,18 @@ def get_square_edges(row, col, cols):
         (top_right, bottom_right)     # Right
     ]
 
+def get_square_edges_coords(row, col):
+    """
+    Get edges around a square as coordinate pairs instead of node indices.
+    Each edge is a tuple: ((row1, col1), (row2, col2))
+    """
+    return [
+        ((row, col), (row, col + 1)),       # Up edge
+        ((row + 1, col), (row + 1, col + 1)), # Down edge
+        ((row, col), (row + 1, col)),       # Left edge
+        ((row, col + 1), (row + 1, col + 1))  # Right edge
+    ]
+
 def bfs_over_squares(squares, edge_list):
     rows = len(squares)
     cols = len(squares[0])
@@ -21,6 +33,9 @@ def bfs_over_squares(squares, edge_list):
 
     visited = [[False for _ in range(cols)] for _ in range(rows)]  # Track visited squares
     directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]  # Directions: up, down, left, right
+
+    # Normalize edge_list: convert each edge to a sorted tuple of coordinates
+    edge_set = set(tuple(sorted(edge)) for edge in edge_list)
 
     # Region detection — loop through all squares to find disconnected ones
     for row_visited in range(rows):
@@ -34,13 +49,14 @@ def bfs_over_squares(squares, edge_list):
                 # BFS square expansion: explore all reachable neighbors unless blocked by an edge
                 while queue:
                     row, col = queue.popleft()
-                    square_edges = get_square_edges(row, col, cols)
+                    square_edges = get_square_edges_coords(row, col)
 
                     # My most beautiful line of code: edge check and neighbor traversal in one loop
                     for (dr, dc), edge in zip(directions, square_edges):
                         r, c = row + dr, col + dc
                         if 0 <= r < rows and 0 <= c < cols:
-                            if edge not in edge_list:
+                            normalized_edge = tuple(sorted(edge))
+                            if normalized_edge not in edge_set:
                                 if not visited[r][c]:
                                     visited[r][c] = True
                                     queue.append((r, c))
@@ -49,6 +65,7 @@ def bfs_over_squares(squares, edge_list):
                 regions.append(region)
 
     return regions  # Return the list of regions (not just the count)
+
 
 # Rule: A region may not contain more than one non-grey color
 def color_rule(regions, squares):

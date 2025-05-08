@@ -1,4 +1,3 @@
-
 from collections import deque
 
 def get_square_edges(row, col, cols):
@@ -51,21 +50,32 @@ def bfs_over_squares(squares, edge_list):
 
     return regions  # Return the list of regions (not just the count)
 
-def validate_solution(squares, edge_list):
-    """
-    Validate puzzle based on rule: no region may contain more than one non-grey color.
-    Returns: (valid_solution: bool, regions: List[List[(row, col)]])
-    """
-    regions = bfs_over_squares(squares, edge_list)
-
+# Rule: A region may not contain more than one non-grey color
+def color_rule(regions, squares):
     for region in regions:
         colors = set()
         for r, c in region:
             color = squares[r][c].get("color", "grey")
-            if color != "grey":  # Ignore grey; only track meaningful colors
+            if color != "grey":
                 colors.add(color)
         if len(colors) > 1:
-            return False, regions  # Region contains multiple distinct colors
+            return False  # Region contains multiple distinct colors
+    return True
 
-    return True, regions  # All regions are single-color (or grey only)
+# Rule: A region must contain either exactly 0 or exactly 2 stars
+def star_rule(regions, squares):
+    for region in regions:
+        star_count = sum(1 for r, c in region if squares[r][c].get("hasStar", False))
+        if star_count not in {0, 2}:
+            return False  # Region contains an invalid number of stars
+    return True
 
+def validate_solution(squares, edge_list):
+    """
+    Validate puzzle based on all above rules.
+    Returns: (valid_solution: bool, regions: List[List[(row, col)]])
+    """
+    regions = bfs_over_squares(squares, edge_list)
+    is_color_valid = color_rule(regions, squares)
+    is_star_valid = star_rule(regions, squares)
+    return is_color_valid and is_star_valid, regions

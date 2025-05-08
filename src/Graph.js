@@ -15,6 +15,14 @@ const Grid = ({ width, height }) => {
     Array.from({ length: height }).map(() => Array(width).fill(false))
   );
 
+  // Manually set the Start and Finish nodes here (for nodes, not squares) - SOURCE and SINK
+  const [startNode, setStartNode] = useState({ row: 4, col: 0 });  // For example, (0, 0) is the first node in any graph
+  const [finishNode, setFinishNode] = useState({ row: 0, col: 4 }); // For example, (4, 4) is the final node in a 4x4
+
+  // Track if start and finish nodes are reached
+  const [startReached, setStartReached] = useState(false);
+  const [finishReached, setFinishReached] = useState(false);
+
   // Handle keyboard shortcuts to switch between color and star mode
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -29,6 +37,27 @@ const Grid = ({ width, height }) => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
+  // Save puzzle state to backend whenever path, color, or star updates
+  useEffect(() => {
+    const squares = colors.map((row, i) =>
+      row.map((color, j) => ({
+        color,
+        hasStar: stars[i][j]
+      }))
+    );
+
+    const puzzleData = {
+      squares,
+      nodes: path
+    };
+
+    fetch('http://127.0.0.1:5000/save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(puzzleData)
+    }).catch(console.error);
+  }, [path, colors, stars]);
+
   const handleNodeClick = (row, col) => {
     if (!isDrawing) { 
       // Start drawing
@@ -37,6 +66,14 @@ const Grid = ({ width, height }) => {
     } else {
       // Stop drawing
       setIsDrawing(false);
+    }
+
+    // If the start or finish node is clicked, mark it as reached
+    if (row === startNode.row && col === startNode.col) {
+      setStartReached(true);
+    }
+    if (row === finishNode.row && col === finishNode.col) {
+      setFinishReached(true);
     }
   };
 
@@ -52,6 +89,14 @@ const Grid = ({ width, height }) => {
 
     if (isAdjacent && !alreadyInPath) {
       setPath((prev) => [...prev, { row, col }]);
+
+      // If the start or finish node is reached while following the path, mark as reached
+      if (row === startNode.row && col === startNode.col) {
+        setStartReached(true);
+      }
+      if (row === finishNode.row && col === finishNode.col) {
+        setFinishReached(true);
+      }
     }
   };
 
@@ -62,15 +107,15 @@ const Grid = ({ width, height }) => {
   const handleCellClick = (row, col) => {
     if (mode === 'color') {
       setColors((prevColors) => {
-        const colorCycle = ['grey', 'red', 'green', 'purple', 'blue', 'yellow'];
-  
+        const colorCycle = ['grey', 'red', 'green', 'purple', 'blue', 'yellow', 'orange'];
+
         // Deep copy the full grid
         const newColors = prevColors.map((row) => [...row]);
-  
+
         const currentColor = newColors[row][col];
         const currentIndex = colorCycle.indexOf(currentColor);
         const nextIndex = (currentIndex + 1) % colorCycle.length;
-  
+
         newColors[row][col] = colorCycle[nextIndex];
         return newColors;
       });
@@ -82,62 +127,6 @@ const Grid = ({ width, height }) => {
       });
     }
   };
-  
-
-  /** SAVE PUZZLE STATE TO FLASK */
-  const savePuzzleState = useCallback(async () => {
-    const puzzleData = {
-      squares: colors.map((row, i) =>
-        row.map((color, j) => ({
-          color,
-          hasStar: stars[i][j],
-        }))
-      ),
-      nodes: path,
-      edges: []  // Optional: could store explicit edge list here
-    };
-
-    try {
-      const response = await fetch('http://127.0.0.1:5000/save', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(puzzleData)
-      });
-
-      const result = await response.json();
-      console.log("Saved puzzle state:", result.message);
-    } catch (error) {
-      console.error("Error saving puzzle:", error);
-    }
-  }, [colors, stars, path]);
-
-  /** LOAD PUZZLE STATE FROM FLASK */
-  const loadPuzzleState = useCallback(async () => {
-    try {
-      const response = await fetch('http://127.0.0.1:5000/load');
-      const data = await response.json();
-
-      if (data.squares && data.squares.length > 0) {
-        setColors(data.squares.map(row =>
-          row.map(cell =>
-            typeof cell === 'object' && 'color' in cell ? cell.color : 'grey'
-          )
-        ));
-        setStars(data.squares.map(row => row.map(cell => typeof cell === 'object' && cell.hasStar)));
-      }
-
-      if (data.nodes && data.nodes.length > 0) {
-        setPath(data.nodes);
-      }
-
-    } catch (error) {
-      console.error("Error loading puzzle:", error);
-    }
-  }, []);
-
-  useEffect(() => {
-    savePuzzleState(); // Automatically save when colors or path change
-  }, [savePuzzleState]);
 
   return (
     <div
@@ -176,12 +165,12 @@ const Grid = ({ width, height }) => {
             >
               {stars[cellRow][cellCol] && (
                 <img
-                  src="orange_star_extracted.png"   //When it works
-                  alt="Star"                        //When it's broken
+                  src="orange_star_extracted.png"   // When it works
+                  alt="Star"                        // When it's broken
                   style={{
                     position: 'absolute',
-                    width: '75px',          //Star size
-                    height: '75px',         //Star spacing 
+                    width: '75px',          // Star size
+                    height: '75px',         // Star spacing 
                     top: '-2.5px',
                     left: '-2.5px',
                     pointerEvents: 'none', // allows clicking through the image
@@ -204,12 +193,16 @@ const Grid = ({ width, height }) => {
         {Array.from({ length: height + 1 }).map((_, row) =>
           Array.from({ length: width + 1 }).map((_, col) => {
             const isInPath = isNodeInPath(row, col);
+            const isStart = startNode.row === row && startNode.col === col;
+            const isFinish = finishNode.row === row && finishNode.col === col;
+
             return (
               <div
                 key={`node-${row}-${col}`}
                 onClick={() => handleNodeClick(row, col)}
                 onMouseEnter={() => handleMouseEnter(row, col)}
                 style={{
+                  // Default size for nodes
                   width: '10px',
                   height: '10px',
                   backgroundColor: isInPath ? 'white' : 'black',
@@ -218,8 +211,48 @@ const Grid = ({ width, height }) => {
                   top: row * 110,
                   left: col * 110,
                   cursor: 'pointer',
+                  // Make the start and finish nodes larger and shift them up/left by 10px
+                  ...(isStart || isFinish ? { 
+                    width: '30px', 
+                    height: '30px', 
+                    top: row * 110 - 10,  // Shift up
+                    left: col * 110 - 10, // Shift left
+                  } : {}),
                 }}
-              />
+              >
+                {/* Start Node */}
+                {isStart && (
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: '50%',  // Vertically center
+                      left: '50%', // Horizontally center
+                      transform: 'translate(-50%, -50%)',  // Perfect centering
+                      fontSize: '12px',
+                      color: startReached ? 'black' : 'white',  // Change color based on state
+                      zIndex: 10,  // Ensure it's on top of the path
+                    }}
+                  >
+                    S
+                  </div>
+                )}
+                {/* Finish Node */}
+                {isFinish && (
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: '50%',  // Vertically center
+                      left: '50%', // Horizontally center
+                      transform: 'translate(-50%, -50%)',  // Perfect centering
+                      fontSize: '12px',
+                      color: finishReached ? 'black' : 'white',  // Change color based on state
+                      zIndex: 10,  // Ensure it's on top of the path
+                    }}
+                  >
+                    F
+                  </div>
+                )}
+              </div>
             );
           })
         )}
@@ -256,6 +289,7 @@ const Grid = ({ width, height }) => {
                 left: Math.min(x1, x2),
                 width: isHorizontal ? Math.abs(x2 - x1) : 5,
                 height: isVertical ? Math.abs(y2 - y1) : 5,
+                zIndex: 1, // Ensure path is below the start/finish labels
               }}
             />
           );

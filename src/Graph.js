@@ -1,35 +1,37 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 
-const Grid = ({ width, height }) => {
-  const [path, setPath] = useState([]);
+const Grid = ({ width, height, initialSquares = [], initialNodes = [], startNode: initialStartNode, finishNode: initialFinishNode }) => {
+  const [path, setPath] = useState(initialNodes);
   const [isDrawing, setIsDrawing] = useState(false);
   const [mode, setMode] = useState('color'); // 'color' or 'star'
   const [edgeColor, setEdgeColor] = useState('white'); 
   const [nodeHighlightColor, setNodeHighlightColor] = useState('white');
 
-  // Store the color of each square in a 2D array
+  // Initialize colors and stars from initialSquares, or default to grey/false
   const [colors, setColors] = useState(
-    Array.from({ length: height }).map(() => Array(width).fill('grey'))  // Default color is grey - square has no rule
+    initialSquares.length > 0
+      ? initialSquares.map(row => row.map(cell => cell.color || 'grey'))
+      : Array.from({ length: height }).map(() => Array(width).fill('grey'))
   );
 
-  // Store star state (true/false) for each square
   const [stars, setStars] = useState(
-    Array.from({ length: height }).map(() => Array(width).fill(false))
+    initialSquares.length > 0
+      ? initialSquares.map(row => row.map(cell => cell.hasStar || false))
+      : Array.from({ length: height }).map(() => Array(width).fill(false))
   );
 
   // Manually set the Start and Finish nodes here (for nodes, not squares) - SOURCE and SINK
-  const [startNode, setStartNode] = useState({ row: 4, col: 0 });  // For example, (0, 0) is the first node in any graph
-  const [finishNode, setFinishNode] = useState({ row: 0, col: 4 }); // For example, (4, 4) is the final node in a 4x4
-
-  // Track if start and finish nodes are reached
+  const [startNode, setStartNode] = useState(initialStartNode || { row: height, col: 0 });
+  const [finishNode, setFinishNode] = useState(initialFinishNode || { row: 0, col: width });
+  
   const [startReached, setStartReached] = useState(false);
   const [finishReached, setFinishReached] = useState(false);
 
-  // Handle keyboard shortcuts to switch between color and star mode
+  // Handle keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e) => {
       const key = e.key.toLowerCase();
-  
+
       if (key === 's') {
         setMode('star');
       } else if (key === 'c') {
@@ -42,7 +44,7 @@ const Grid = ({ width, height }) => {
           setFinishReached(false);
           setEdgeColor('white');
           setNodeHighlightColor('white');
-        }        
+        }
       } else if (key === 'z') {
         if (path.length > 1) {
           const newPath = [...path];
@@ -53,23 +55,22 @@ const Grid = ({ width, height }) => {
         }
       }
     };
-  
+
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isDrawing, path]);
-  
-  // Save puzzle state to backend whenever path, color, or star updates
+
+  // Save puzzle state to backend
   useEffect(() => {
     const squares = colors.map((row, i) =>
-      row.map((color, j) => ({
-        color,
-        hasStar: stars[i][j]
-      }))
+      row.map((color, j) => ({ color, hasStar: stars[i][j] }))
     );
 
     const puzzleData = {
       squares,
-      nodes: path
+      nodes: path,
+      height,
+      width
     };
 
     fetch('http://127.0.0.1:5000/save', {
@@ -77,74 +78,62 @@ const Grid = ({ width, height }) => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(puzzleData)
     }).catch(console.error);
-  }, [path, colors, stars]);
+  }, [path, colors, stars, height, width]);
 
   const handleNodeClick = async (row, col) => {
     const isStart = row === startNode.row && col === startNode.col;
     const isFinish = row === finishNode.row && col === finishNode.col;
-  
+
     if (!isDrawing) {
-      // Only allow the path to begin from the start node
       if (isStart) {
         setPath([{ row, col }]);
         setIsDrawing(true);
         setStartReached(true);
-        setFinishReached(false);           
-        setNodeHighlightColor('white');    
+        setFinishReached(false);
+        setNodeHighlightColor('white');
       }
     } else {
       if (isFinish) {
-        // Temporarily add the finish node to the path
         const updatedPath = [...path, { row, col }];
         setPath(updatedPath);
         setFinishReached(true);
         setIsDrawing(false);
-  
-        // Fetch validation result from backend
+
         try {
           const res = await fetch('http://127.0.0.1:5000/load');
           const data = await res.json();
-  
-          // If solution is invalid, clear the path
+
           if (!data.valid_solution) {
-            const flashSequenceInvalid = ['white', 'red', 'white', 'red', 'white', 'red', 'white'];
-            flashSequenceInvalid.forEach((color, i) => {
+            const flashSequence = ['white', 'red', 'white', 'red', 'white', 'red', 'white'];
+            flashSequence.forEach((color, i) => {
               setTimeout(() => {
                 setEdgeColor(color);
                 setNodeHighlightColor(color);
-              }, i * 200);  // Should match valid timing 
+              }, i * 200);
             });
-
-            // Clear after flashing ends
             setTimeout(() => {
               setPath([]);
               setStartReached(false);
               setFinishReached(false);
               setEdgeColor('white');
               setNodeHighlightColor('white');
-            }, flashSequenceInvalid.length * 200); // Should match invalid timing 
-          }
-           else {
-            // Trigger flashing animation
-            const flashSequenceValid = ['white', 'green', 'white', 'green', 'white', 'green', 'white'];
-            flashSequenceValid.forEach((color, i) => {
+            }, flashSequence.length * 200);
+          } else {
+            const flashSequence = ['white', 'green', 'white', 'green', 'white', 'green', 'white'];
+            flashSequence.forEach((color, i) => {
               setTimeout(() => {
                 setEdgeColor(color);
                 setNodeHighlightColor(color);
-              }, i * 200);          //Time between flashes, currently 200 ms
-            });            
+              }, i * 200);
+            });
           }
         } catch (err) {
           console.error("Error validating solution:", err);
-  
-          // Clear the path on server error as a fallback
           setPath([]);
           setStartReached(false);
           setFinishReached(false);
         }
-  
       } else {
-        // Clicked a non-finish node while drawing; clear the path
         setPath([]);
         setIsDrawing(false);
         setStartReached(false);
@@ -152,7 +141,7 @@ const Grid = ({ width, height }) => {
       }
     }
   };
-  
+
   const handleMouseEnter = (row, col) => {
     if (!isDrawing) return;
     const lastNode = path[path.length - 1];
@@ -166,33 +155,22 @@ const Grid = ({ width, height }) => {
     if (isAdjacent && !alreadyInPath) {
       setPath((prev) => [...prev, { row, col }]);
 
-      // If the start or finish node is reached while following the path, mark as reached
-      if (row === startNode.row && col === startNode.col) {
-        setStartReached(true);
-      }
-      if (row === finishNode.row && col === finishNode.col) {
-        setFinishReached(true);
-      }
+      if (row === startNode.row && col === startNode.col) setStartReached(true);
+      if (row === finishNode.row && col === finishNode.col) setFinishReached(true);
     }
   };
 
   const isNodeInPath = (row, col) =>
     path.some((node) => node.row === row && node.col === col);
 
-  // Unified left click handler based on current mode
   const handleCellClick = (row, col) => {
     if (mode === 'color') {
       setColors((prevColors) => {
-        const colorCycle = ['grey', 'red', 'green', 'purple', 'blue', 'yellow', 'orange'];
-
-        // Deep copy the full grid
+        const colorCycle = ['grey', 'red', 'green', 'purple', 'blue', 'yellow', 'orange', 'pink'];
         const newColors = prevColors.map((row) => [...row]);
-
         const currentColor = newColors[row][col];
-        const currentIndex = colorCycle.indexOf(currentColor);
-        const nextIndex = (currentIndex + 1) % colorCycle.length;
-
-        newColors[row][col] = colorCycle[nextIndex];
+        const nextColor = colorCycle[(colorCycle.indexOf(currentColor) + 1) % colorCycle.length];
+        newColors[row][col] = nextColor;
         return newColors;
       });
     } else if (mode === 'star') {
@@ -205,51 +183,46 @@ const Grid = ({ width, height }) => {
   };
 
   return (
-    <div
-      style={{
-        position: 'relative',
-        backgroundColor: '#333',
-        width: `${width * 85}px`,
-        height: `${height * 85}px`,
-      }}
-    >
+    <div style={{
+      position: 'relative',
+      backgroundColor: '#333',
+      width: `${width * 85}px`,
+      height: `${height * 85}px`,
+    }}>
       {/* Square spacing */}
-      <div
-        style={{
-          position: 'absolute',
-          display: 'grid',
-          gridTemplateColumns: `repeat(${width}, 70px)`,
-          gridTemplateRows: `repeat(${height}, 70px)`,
-          gridGap: '40px',
-          top: '-10px',
-          left: '-10px',
-        }}
-      >
-        {Array.from({ length: height }).map((_, cellRow) =>
-          Array.from({ length: width }).map((_, cellCol) => (
+      <div style={{
+        position: 'absolute',
+        display: 'grid',
+        gridTemplateColumns: `repeat(${width}, 70px)`,
+        gridTemplateRows: `repeat(${height}, 70px)`,
+        gridGap: '40px',
+        top: '-10px',
+        left: '-10px',
+      }}>
+        {colors.map((row, r) =>
+          row.map((_, c) => (
             <div
-              key={`cell-${cellRow}-${cellCol}`}
-              onClick={() => handleCellClick(cellRow, cellCol)}
-              onMouseEnter={() => handleMouseEnter(cellRow, cellCol)}
+              key={`cell-${r}-${c}`}
+              onClick={() => handleCellClick(r, c)}
+              onMouseEnter={() => handleMouseEnter(r, c)}
               style={{
-                backgroundColor: colors[cellRow][cellCol],
+                backgroundColor: colors[r][c],
                 width: '70px',
                 height: '70px',
                 cursor: 'pointer',
                 position: 'relative',
-              }}
-            >
-              {stars[cellRow][cellCol] && (
+              }}>
+              {stars[r][c] && (
                 <img
-                  src="orange_star_extracted.png"   // When it works
-                  alt="Star"                        // When it's broken
+                  src="orange_star_extracted.png"
+                  alt="Star"
                   style={{
                     position: 'absolute',
-                    width: '75px',          // Star size
-                    height: '75px',         // Star spacing 
+                    width: '75px',
+                    height: '75px',
                     top: '-2.5px',
                     left: '-2.5px',
-                    pointerEvents: 'none', // allows clicking through the image
+                    pointerEvents: 'none',
                   }}
                 />
               )}
@@ -259,80 +232,33 @@ const Grid = ({ width, height }) => {
       </div>
 
       {/* Node Spacing */}
-      <div
-        style={{
-          position: 'absolute',
-          top: '-35px',
-          left: '-35px',
-        }}
-      >
+      <div style={{ position: 'absolute', top: '-35px', left: '-35px' }}>
         {Array.from({ length: height + 1 }).map((_, row) =>
           Array.from({ length: width + 1 }).map((_, col) => {
             const isInPath = isNodeInPath(row, col);
             const isStart = startNode.row === row && startNode.col === col;
             const isFinish = finishNode.row === row && finishNode.col === col;
-
             return (
               <div
                 key={`node-${row}-${col}`}
                 onClick={() => handleNodeClick(row, col)}
                 onMouseEnter={() => handleMouseEnter(row, col)}
                 style={{
-                  // Default size for nodes
-                  width: '10px',
-                  height: '10px',
-                  backgroundColor:
-                  isStart
+                  width: isStart || isFinish ? '30px' : '10px',
+                  height: isStart || isFinish ? '30px' : '10px',
+                  backgroundColor: isStart
                     ? (startReached ? nodeHighlightColor : 'black')
                     : isFinish
                     ? (finishReached ? nodeHighlightColor : 'black')
                     : (isInPath ? edgeColor : 'black'),
                   borderRadius: '50%',
                   position: 'absolute',
-                  top: row * 110,
-                  left: col * 110,
+                  top: row * 110 + (isStart || isFinish ? -10 : 0),
+                  left: col * 110 + (isStart || isFinish ? -10 : 0),
                   cursor: 'pointer',
-                  // Make the start and finish nodes larger and shift them up/left by 10px
-                  ...(isStart || isFinish ? { 
-                    width: '30px', 
-                    height: '30px', 
-                    top: row * 110 - 10,  // Shift up
-                    left: col * 110 - 10, // Shift left
-                  } : {}),
-                }}
-              >
-                {/* Start Node */}
-                {isStart && (
-                  <div
-                    style={{
-                      position: 'absolute',
-                      top: '50%',  // Vertically center
-                      left: '50%', // Horizontally center
-                      transform: 'translate(-50%, -50%)',  // Perfect centering
-                      fontSize: '12px',
-                      color: startReached ? 'black' : 'white',  // Change color based on state
-                      zIndex: 10,  // Ensure it's on top of the path
-                    }}
-                  >
-                    S
-                  </div>
-                )}
-                {/* Finish Node */}
-                {isFinish && (
-                  <div
-                    style={{
-                      position: 'absolute',
-                      top: '50%',  // Vertically center
-                      left: '50%', // Horizontally center
-                      transform: 'translate(-50%, -50%)',  // Perfect centering
-                      fontSize: '12px',
-                      color: finishReached ? 'black' : 'white',  // Change color based on state
-                      zIndex: 10,  // Ensure it's on top of the path
-                    }}
-                  >
-                    F
-                  </div>
-                )}
+                }}>
+                {isStart && <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', fontSize: '12px', color: startReached ? 'black' : 'white', zIndex: 10 }}>S</div>}
+                {isFinish && <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', fontSize: '12px', color: finishReached ? 'black' : 'white', zIndex: 10 }}>F</div>}
               </div>
             );
           })
@@ -340,25 +266,17 @@ const Grid = ({ width, height }) => {
       </div>
 
       {/* Path spacing */}
-      <div
-        style={{
-          position: 'absolute',
-          top: '-35px',
-          left: '-35px',
-        }}
-      >
+      <div style={{ position: 'absolute', top: '-35px', left: '-35px' }}>
         {path.map((node, index) => {
           if (index === 0) return null;
-          const prevNode = path[index - 1];
-          const isHorizontal = node.row === prevNode.row;
-          const isVertical = node.col === prevNode.col;
-
-          if (!isHorizontal && !isVertical) return null;
-
-          const x1 = prevNode.col * 110;
-          const y1 = prevNode.row * 110;
+          const prev = path[index - 1];
+          const x1 = prev.col * 110;
+          const y1 = prev.row * 110;
           const x2 = node.col * 110;
           const y2 = node.row * 110;
+          const isH = prev.row === node.row;
+          const isV = prev.col === node.col;
+          if (!isH && !isV) return null;
 
           return (
             <div
@@ -368,9 +286,9 @@ const Grid = ({ width, height }) => {
                 backgroundColor: edgeColor,
                 top: Math.min(y1, y2),
                 left: Math.min(x1, x2),
-                width: isHorizontal ? Math.abs(x2 - x1) : 5,
-                height: isVertical ? Math.abs(y2 - y1) : 5,
-                zIndex: 1, // Ensure path is below the start/finish labels
+                width: isH ? Math.abs(x2 - x1) : 5,
+                height: isV ? Math.abs(y2 - y1) : 5,
+                zIndex: 1,
               }}
             />
           );

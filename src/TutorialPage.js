@@ -1,11 +1,119 @@
 // TutorialPage.js
-import React from 'react';
+import React, { useState } from 'react';
+import Grid from './Graph'; // Main puzzle component
 
-const TutorialPage = ({ width, height }) => {
+const TutorialPage = () => {
+  const [puzzleData, setPuzzleData] = useState(null);  // Loaded puzzle data
+  const [puzzleIndex, setPuzzleIndex] = useState(null); // Track puzzle number
+  const [error, setError] = useState(null);            // Error messages
+
+  // Load puzzle JSON from public/tutorial/puzzleN.json
+  const handleLoadPuzzle = async (index) => {
+    try {
+      const res = await fetch(`/tutorial/puzzle${index}.json`);
+      if (!res.ok) throw new Error('Puzzle not found');
+      const data = await res.json();
+      setPuzzleData(data);
+      setPuzzleIndex(index); // Save number separately
+      setError(null);
+    } catch (err) {
+      setPuzzleData(null);
+      setPuzzleIndex(null);
+      setError(`Oops... Puzzle ${index} not found.`);
+    }
+  };
+
+  const handleBackToMenu = () => {
+    setPuzzleData(null);
+    setPuzzleIndex(null);
+    setError(null);
+  };
+
+  // === Puzzle view ===
+  if (puzzleData) {
+    return (
+      <div style={{ backgroundColor: '#333', height: '100vh', position: 'relative' }}>
+        {/* Top navigation bar with back button and puzzle number */}
+        <div style={{ 
+          position: 'fixed',
+          top: '20px',
+          left: '20px',
+          right: '20px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          zIndex: 1000
+        }}>
+          <button
+            onClick={handleBackToMenu}
+            style={{
+              padding: '8px 16px',
+              fontSize: '14px',
+              cursor: 'pointer',
+            }}
+          >
+            ← Back to Puzzle Library
+          </button>
+
+          {puzzleIndex !== null && (
+            <div style={{ color: 'white', fontSize: '16px', fontWeight: 'bold' }}>
+              Puzzle {puzzleIndex}
+            </div>
+          )}
+        </div>
+
+        {/* Centered puzzle grid */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          height: '100%',
+        }}>
+          <Grid
+            width={puzzleData.width}
+            height={puzzleData.height}
+            initialSquares={puzzleData.squares}
+            initialNodes={puzzleData.nodes}
+            startNode={puzzleData.startNode}
+            finishNode={puzzleData.finishNode}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // === Puzzle list view ===
   return (
-    <div style={{ color: 'white', marginTop: '50px' }}>
-      <h2>Tutorial Puzzles Coming Soon</h2>
-      <p>This page will include a series of 9 puzzles to teach players how to play.</p>
+    <div style={{ color: 'white', padding: '40px', textAlign: 'center' }}>
+      <h2>Choose a Puzzle</h2>
+
+      <div style={{
+        display: 'flex',
+        flexWrap: 'wrap',
+        justifyContent: 'center',
+        gap: '10px',
+        marginTop: '20px'
+      }}>
+        {Array.from({ length: 10 }, (_, i) => (
+          <button
+            key={i}
+            onClick={() => handleLoadPuzzle(i + 1)}
+            style={{
+              padding: '10px 15px',
+              fontSize: '14px',
+              cursor: 'pointer'
+            }}
+          >
+            Puzzle {i + 1}
+          </button>
+        ))}
+      </div>
+
+      {error && (
+        <p style={{ marginTop: '20px', color: 'red' }}>
+          {error}
+        </p>
+      )}
     </div>
   );
 };

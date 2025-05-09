@@ -10,9 +10,11 @@ CORS(app)  # Enable CORS for React frontend
 
 # Store the puzzle state in memory
 puzzle_state = {
-    "squares": [],  # Grid of squares, each with { color, hasStar }
-    "nodes": [],    # Path traced by user
-    "edges": []     # Edge list between node indices
+    "height": 0,     # Number of rows in the grid
+    "width": 0,      # Number of columns in the grid
+    "squares": [],   # Grid of squares, each with { color, hasStar }
+    "nodes": [],     # Path traced by user
+    "edges": []      # Edge list between node indices
 }
 
 # Convert a node (row, col) to a unique index based on row-major layout
@@ -34,6 +36,10 @@ def save_puzzle():
     if not data:
         return jsonify({"message": "No data received"}), 400
 
+    # Accept dynamic grid dimensions from the client
+    puzzle_state["height"] = data.get("height", 0)
+    puzzle_state["width"] = data.get("width", 0)
+
     puzzle_state["squares"] = data.get("squares", [])
     puzzle_state["nodes"] = data.get("nodes", [])
 
@@ -44,11 +50,11 @@ def save_puzzle():
     for r in range(rows):
         for c in range(cols):
             cell = puzzle_state["squares"][r][c]
-            if isinstance(puzzle_state["squares"][r][c], str):
+            if isinstance(cell, str):
                 puzzle_state["squares"][r][c] = {
-                    "color": puzzle_state["squares"][r][c],
+                    "color": cell,
                     "hasStar": False
-    }
+                }
 
     # Generate edges from path
     puzzle_state["edges"] = build_edge_list(puzzle_state["nodes"], cols)
@@ -70,6 +76,8 @@ def load_puzzle():
     response_data = OrderedDict([
         ("valid_solution", is_valid),
         ("region_count", region_count),
+        ("height", puzzle_state["height"]),
+        ("width", puzzle_state["width"]),
         ("edges", puzzle_state["edges"]),
         ("squares", puzzle_state["squares"]),
         ("nodes", puzzle_state["nodes"])

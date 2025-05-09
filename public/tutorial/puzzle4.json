@@ -1,0 +1,28 @@
+{
+    "valid_solution": false,
+    "region_count": 1,
+    "height": 3,
+    "width": 3,
+    "edges": [],
+    "squares": [
+      [
+        { "color": "blue", "hasStar": false },
+        { "color": "blue", "hasStar": false },
+        { "color": "blue", "hasStar": false }
+      ],
+      [
+        { "color": "blue", "hasStar": false },
+        { "color": "yellow", "hasStar": false },
+        { "color": "blue", "hasStar": false }
+      ],
+      [
+        { "color": "yellow", "hasStar": false },
+        { "color": "yellow", "hasStar": false },
+        { "color": "yellow", "hasStar": false }
+      ]
+    ],
+    "nodes": [],
+    "startNode": { "row": 3, "col": 0 },
+    "finishNode": { "row": 2, "col": 0 }
+  }
+  

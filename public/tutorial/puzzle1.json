@@ -1,0 +1,16 @@
+{
+    "valid_solution": false,
+    "region_count": 1,
+    "height": 3,
+    "width": 1,
+    "startNode": { "row": 3, "col": 0 },
+    "finishNode": { "row": 0, "col": 1 },
+    "edges": [],
+    "squares": [
+      [{ "color": "yellow", "hasStar": false }],
+      [{ "color": "orange", "hasStar": false }],
+      [{ "color": "blue", "hasStar": false }]
+    ],
+    "nodes": []
+  }
+  

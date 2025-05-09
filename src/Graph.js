@@ -4,6 +4,8 @@ const Grid = ({ width, height }) => {
   const [path, setPath] = useState([]);
   const [isDrawing, setIsDrawing] = useState(false);
   const [mode, setMode] = useState('color'); // 'color' or 'star'
+  const [edgeColor, setEdgeColor] = useState('white'); 
+  const [nodeHighlightColor, setNodeHighlightColor] = useState('white');
 
   // Store the color of each square in a 2D array
   const [colors, setColors] = useState(
@@ -26,17 +28,36 @@ const Grid = ({ width, height }) => {
   // Handle keyboard shortcuts to switch between color and star mode
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key.toLowerCase() === 's') {
-        setMode('star');  // Activate star mode
-      } else if (e.key.toLowerCase() === 'c') {
-        setMode('color'); // Activate color mode
+      const key = e.key.toLowerCase();
+  
+      if (key === 's') {
+        setMode('star');
+      } else if (key === 'c') {
+        setMode('color');
+      } else if (key === 'k') {
+        if (isDrawing || path.length > 0) {
+          setPath([]);
+          setIsDrawing(false);
+          setStartReached(false);
+          setFinishReached(false);
+          setEdgeColor('white');
+          setNodeHighlightColor('white');
+        }        
+      } else if (key === 'z') {
+        if (path.length > 1) {
+          const newPath = [...path];
+          newPath.pop();
+          setPath(newPath);
+        } else if (path.length === 1) {
+          setPath([path[0]]);
+        }
       }
     };
-
+  
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
-
+  }, [isDrawing, path]);
+  
   // Save puzzle state to backend whenever path, color, or star updates
   useEffect(() => {
     const squares = colors.map((row, i) =>
@@ -58,25 +79,80 @@ const Grid = ({ width, height }) => {
     }).catch(console.error);
   }, [path, colors, stars]);
 
-  const handleNodeClick = (row, col) => {
-    if (!isDrawing) { 
-      // Start drawing
-      setPath([{ row, col }]);
-      setIsDrawing(true);
+  const handleNodeClick = async (row, col) => {
+    const isStart = row === startNode.row && col === startNode.col;
+    const isFinish = row === finishNode.row && col === finishNode.col;
+  
+    if (!isDrawing) {
+      // Only allow the path to begin from the start node
+      if (isStart) {
+        setPath([{ row, col }]);
+        setIsDrawing(true);
+        setStartReached(true);
+        setFinishReached(false);           
+        setNodeHighlightColor('white');    
+      }
     } else {
-      // Stop drawing
-      setIsDrawing(false);
-    }
+      if (isFinish) {
+        // Temporarily add the finish node to the path
+        const updatedPath = [...path, { row, col }];
+        setPath(updatedPath);
+        setFinishReached(true);
+        setIsDrawing(false);
+  
+        // Fetch validation result from backend
+        try {
+          const res = await fetch('http://127.0.0.1:5000/load');
+          const data = await res.json();
+  
+          // If solution is invalid, clear the path
+          if (!data.valid_solution) {
+            const flashSequenceInvalid = ['white', 'red', 'white', 'red', 'white', 'red', 'white'];
+            flashSequenceInvalid.forEach((color, i) => {
+              setTimeout(() => {
+                setEdgeColor(color);
+                setNodeHighlightColor(color);
+              }, i * 200);  // Should match valid timing 
+            });
 
-    // If the start or finish node is clicked, mark it as reached
-    if (row === startNode.row && col === startNode.col) {
-      setStartReached(true);
-    }
-    if (row === finishNode.row && col === finishNode.col) {
-      setFinishReached(true);
+            // Clear after flashing ends
+            setTimeout(() => {
+              setPath([]);
+              setStartReached(false);
+              setFinishReached(false);
+              setEdgeColor('white');
+              setNodeHighlightColor('white');
+            }, flashSequenceInvalid.length * 200); // Should match invalid timing 
+          }
+           else {
+            // Trigger flashing animation
+            const flashSequenceValid = ['white', 'green', 'white', 'green', 'white', 'green', 'white'];
+            flashSequenceValid.forEach((color, i) => {
+              setTimeout(() => {
+                setEdgeColor(color);
+                setNodeHighlightColor(color);
+              }, i * 200);          //Time between flashes, currently 200 ms
+            });            
+          }
+        } catch (err) {
+          console.error("Error validating solution:", err);
+  
+          // Clear the path on server error as a fallback
+          setPath([]);
+          setStartReached(false);
+          setFinishReached(false);
+        }
+  
+      } else {
+        // Clicked a non-finish node while drawing; clear the path
+        setPath([]);
+        setIsDrawing(false);
+        setStartReached(false);
+        setFinishReached(false);
+      }
     }
   };
-
+  
   const handleMouseEnter = (row, col) => {
     if (!isDrawing) return;
     const lastNode = path[path.length - 1];
@@ -205,7 +281,12 @@ const Grid = ({ width, height }) => {
                   // Default size for nodes
                   width: '10px',
                   height: '10px',
-                  backgroundColor: isInPath ? 'white' : 'black',
+                  backgroundColor:
+                  isStart
+                    ? (startReached ? nodeHighlightColor : 'black')
+                    : isFinish
+                    ? (finishReached ? nodeHighlightColor : 'black')
+                    : (isInPath ? edgeColor : 'black'),
                   borderRadius: '50%',
                   position: 'absolute',
                   top: row * 110,
@@ -284,7 +365,7 @@ const Grid = ({ width, height }) => {
               key={`line-${index}`}
               style={{
                 position: 'absolute',
-                backgroundColor: 'white',
+                backgroundColor: edgeColor,
                 top: Math.min(y1, y2),
                 left: Math.min(x1, x2),
                 width: isHorizontal ? Math.abs(x2 - x1) : 5,

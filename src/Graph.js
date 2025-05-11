@@ -96,8 +96,13 @@ const Grid = ({ width, height, initialSquares = [], initialNodes = [], startNode
       }
     } else {
       if (isFinish) {
-        const updatedPath = [...path, { row, col }];
-        setPath(updatedPath);
+
+        // Prevent duplicate finish node - self looping edges were occurring
+        if (path.length === 0 || !(path[path.length - 1].row === row && path[path.length - 1].col === col)) {
+          const updatedPath = [...path, { row, col }];
+          setPath(updatedPath);
+        }
+
         setFinishReached(true);
         setIsDrawing(false);
 

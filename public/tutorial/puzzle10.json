@@ -1,1 +1,48 @@
-{"valid_solution": false, "region_count": 1, "height": 5, "width": 5, "edges": [], "squares": [[{"color": "red", "hasStar": false}, {"color": "grey", "hasStar": false}, {"color": "grey", "hasStar": false}, {"color": "blue", "hasStar": false}, {"color": "grey", "hasStar": false}], [{"color": "blue", "hasStar": false}, {"color": "grey", "hasStar": false}, {"color": "grey", "hasStar": false}, {"color": "grey", "hasStar": false}, {"color": "grey", "hasStar": false}], [{"color": "grey", "hasStar": false}, {"color": "grey", "hasStar": false}, {"color": "purple", "hasStar": false}, {"color": "grey", "hasStar": false}, {"color": "grey", "hasStar": false}], [{"color": "grey", "hasStar": false}, {"color": "grey", "hasStar": false}, {"color": "grey", "hasStar": false}, {"color": "grey", "hasStar": false}, {"color": "blue", "hasStar": false}], [{"color": "grey", "hasStar": false}, {"color": "blue", "hasStar": false}, {"color": "grey", "hasStar": false}, {"color": "grey", "hasStar": false}, {"color": "red", "hasStar": false}]], "nodes": []}
+{
+    "valid_solution": false,
+    "region_count": 1,
+    "height": 5,
+    "width": 5,
+    "edges": [],
+    "squares": [
+      [
+        { "color": "red", "hasStar": false },
+        { "color": "grey", "hasStar": false },
+        { "color": "grey", "hasStar": false },
+        { "color": "blue", "hasStar": false },
+        { "color": "grey", "hasStar": false }
+      ],
+      [
+        { "color": "blue", "hasStar": false },
+        { "color": "grey", "hasStar": false },
+        { "color": "grey", "hasStar": false },
+        { "color": "grey", "hasStar": false },
+        { "color": "grey", "hasStar": false }
+      ],
+      [
+        { "color": "grey", "hasStar": false },
+        { "color": "grey", "hasStar": false },
+        { "color": "purple", "hasStar": false },
+        { "color": "grey", "hasStar": false },
+        { "color": "grey", "hasStar": false }
+      ],
+      [
+        { "color": "grey", "hasStar": false },
+        { "color": "grey", "hasStar": false },
+        { "color": "grey", "hasStar": false },
+        { "color": "grey", "hasStar": false },
+        { "color": "blue", "hasStar": false }
+      ],
+      [
+        { "color": "grey", "hasStar": false },
+        { "color": "blue", "hasStar": false },
+        { "color": "grey", "hasStar": false },
+        { "color": "grey", "hasStar": false },
+        { "color": "red", "hasStar": false }
+      ]
+    ],
+    "nodes": [],
+    "startNode": { "row": 5, "col": 0 },
+    "finishNode": { "row": 0, "col": 5 }
+  }
+  

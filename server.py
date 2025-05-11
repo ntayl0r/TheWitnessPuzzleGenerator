@@ -14,7 +14,10 @@ puzzle_state = {
     "width": 0,      # Number of columns in the grid
     "squares": [],   # Grid of squares, each with { color, hasStar }
     "nodes": [],     # Path traced by user
-    "edges": []      # Edge list between node indices
+    "edges": [],      # Edge list between node indices
+    "startNode": None,  # Node S
+    "finishNode": None, # Node F
+
 }
 
 # Convert a node (row, col) to a unique index based on row-major layout
@@ -42,6 +45,8 @@ def save_puzzle():
 
     puzzle_state["squares"] = data.get("squares", [])
     puzzle_state["nodes"] = data.get("nodes", [])
+    puzzle_state["startNode"] = data.get("startNode")
+    puzzle_state["finishNode"] = data.get("finishNode")
 
     rows = len(puzzle_state["squares"])
     cols = len(puzzle_state["squares"][0]) if rows > 0 else 0
@@ -78,6 +83,8 @@ def load_puzzle():
         ("region_count", region_count),
         ("height", puzzle_state["height"]),
         ("width", puzzle_state["width"]),
+        ("startNode", puzzle_state["startNode"]),
+        ("finishNode", puzzle_state["finishNode"]),
         ("edges", puzzle_state["edges"]),
         ("squares", puzzle_state["squares"]),
         ("nodes", puzzle_state["nodes"])

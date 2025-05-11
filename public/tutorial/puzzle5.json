@@ -32,6 +32,6 @@
     ],
     "nodes": [],
     "startNode": { "row": 4, "col": 0 },
-    "finishNode": { "row": 0, "col": 4 }
+    "finishNode": { "row": 2, "col": 4 }
   }
   

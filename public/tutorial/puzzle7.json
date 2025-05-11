@@ -1,1 +1,37 @@
-{"valid_solution": false, "region_count": 1, "height": 4, "width": 4, "edges": [], "squares": [[{"color": "grey", "hasStar": false}, {"color": "grey", "hasStar": false}, {"color": "yellow", "hasStar": false}, {"color": "grey", "hasStar": false}], [{"color": "grey", "hasStar": false}, {"color": "grey", "hasStar": false}, {"color": "green", "hasStar": false}, {"color": "grey", "hasStar": false}], [{"color": "grey", "hasStar": false}, {"color": "grey", "hasStar": false}, {"color": "yellow", "hasStar": false}, {"color": "grey", "hasStar": false}], [{"color": "green", "hasStar": false}, {"color": "grey", "hasStar": false}, {"color": "grey", "hasStar": false}, {"color": "blue", "hasStar": false}]], "nodes": []}
+{
+    "valid_solution": false,
+    "region_count": 1,
+    "height": 4,
+    "width": 4,
+    "edges": [],
+    "squares": [
+      [
+        { "color": "grey", "hasStar": false },
+        { "color": "grey", "hasStar": false },
+        { "color": "yellow", "hasStar": false },
+        { "color": "grey", "hasStar": false }
+      ],
+      [
+        { "color": "grey", "hasStar": false },
+        { "color": "grey", "hasStar": false },
+        { "color": "green", "hasStar": false },
+        { "color": "grey", "hasStar": false }
+      ],
+      [
+        { "color": "grey", "hasStar": false },
+        { "color": "grey", "hasStar": false },
+        { "color": "yellow", "hasStar": false },
+        { "color": "grey", "hasStar": false }
+      ],
+      [
+        { "color": "green", "hasStar": false },
+        { "color": "grey", "hasStar": false },
+        { "color": "grey", "hasStar": false },
+        { "color": "blue", "hasStar": false }
+      ]
+    ],
+    "nodes": [],
+    "startNode": { "row": 4, "col": 0 },
+    "finishNode": { "row": 0, "col": 4 }
+  }
+  

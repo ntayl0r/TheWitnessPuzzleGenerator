@@ -52,28 +52,67 @@ def bfs_over_squares(squares, edge_list):
 # Rule: A region may not contain more than one non-grey color
 def color_rule(regions, squares):
     for region in regions:
-        colors = set()
-        for r, c in region:
-            color = squares[r][c].get("color", "grey")
-            if color != "grey":
-                colors.add(color)
-        if len(colors) > 1:
-            return False  # Region contains multiple distinct colors
+        if not check_color_rule(region, squares):
+            return False
     return True
 
 # Rule: A region must contain exactly 0 or exactly 2 stars of each color
 def star_rule(regions, squares):
     for region in regions:
-        star_counter = {}
-        for r, c in region:
-            star_color = squares[r][c].get("starColor")
-            if star_color:
-                star_counter[star_color] = star_counter.get(star_color, 0) + 1
-
-        for count in star_counter.values():
-            if count not in {0, 2}:
-                return False  # Star color appears in invalid quantity
+        if not check_star_rule(region, squares):
+            return False
     return True
+
+# Internal rule: returns True if region follows color rule
+def check_color_rule(region, squares):
+    return count_color_violations(region, squares) == 0
+
+# Internal rule: returns True if region follows star pairing rule
+def check_star_rule(region, squares):
+    return count_star_violations(region, squares) == 0
+
+# Internal rule: returns count of color violations (how many squares are off-color)
+def count_color_violations(region, squares):
+    color_counts = {}
+    for r, c in region:
+        color = squares[r][c].get("color", "grey")
+        if color != "grey":
+            color_counts[color] = color_counts.get(color, 0) + 1
+
+    if not color_counts:
+        return 0  # all grey
+
+    dominant_color = max(color_counts.values())
+    total = sum(color_counts.values())
+    return total - dominant_color  # number of off-color squares
+
+# Internal rule: returns count of unpaired stars
+def count_star_violations(region, squares):
+    star_counter = {}
+    for r, c in region:
+        star_color = squares[r][c].get("starColor")
+        if star_color:
+            star_counter[star_color] = star_counter.get(star_color, 0) + 1
+
+    violations = 0
+    for count in star_counter.values():
+        if count % 2 != 0:
+            violations += 1  # each odd star count is a violation
+    return violations
+
+# Internal rule: handle NOT regions — must break exactly one rule (one off-by-one)
+def check_not_rule(region, squares):
+    # 1. Check if region contains any NOT symbol
+    if not any(squares[r][c].get("hasNot", False) for r, c in region):
+        return True  # no NOT in region, no special rule to enforce
+
+    # 2. Count violations
+    color_violations = count_color_violations(region, squares)
+    star_violations = count_star_violations(region, squares)
+    total_violations = color_violations + star_violations
+
+    # 3. NOT rule: must cancel exactly one violation
+    return total_violations == 1
 
 def validate_solution(squares, edge_list):
     """
@@ -81,6 +120,15 @@ def validate_solution(squares, edge_list):
     Returns: (valid_solution: bool, regions: List[List[(row, col)]])
     """
     regions = bfs_over_squares(squares, edge_list)
-    is_color_valid = color_rule(regions, squares)
-    is_star_valid = star_rule(regions, squares)
-    return is_color_valid and is_star_valid, regions
+
+    for region in regions:
+        has_not = any(squares[r][c].get("hasNot", False) for r, c in region)
+
+        if has_not:
+            if not check_not_rule(region, squares):
+                return False, regions
+        else:
+            if not check_color_rule(region, squares) or not check_star_rule(region, squares):
+                return False, regions
+
+    return True, regions

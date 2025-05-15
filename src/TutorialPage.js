@@ -139,6 +139,33 @@ const TutorialPage = () => {
         ))}
       </div>
 
+      <h2>NOT Puzzles</h2>
+
+      <div style={{
+        display: 'flex',
+        flexWrap: 'wrap',
+        justifyContent: 'center',
+        gap: '10px',
+        marginTop: '20px',
+        marginBottom: '30px'
+      }}>
+        {Array.from({ length: 10 }, (_, i) => (
+          <button
+            key={i + 21}
+            onClick={() => handleLoadPuzzle(i + 21)}
+            style={{
+              padding: '10px 15px',
+              fontSize: '14px',
+              cursor: 'pointer',
+              minWidth: '100px',
+              textAlign: 'center'
+            }}
+          >
+            Puzzle {i + 21}
+          </button>
+        ))}
+      </div>
+
       {error && (
         <p style={{ marginTop: '20px', color: 'red' }}>
           {error}

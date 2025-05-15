@@ -28,8 +28,8 @@ const Grid = ({ width, height, initialSquares = [], initialNodes = [], startNode
   );
 
   // Manually set the Start and Finish nodes here (for nodes, not squares) - SOURCE and SINK
-  const [startNode] = useState(initialStartNode || { row: height, col: 2 });
-  const [finishNode] = useState(initialFinishNode || { row: 0, col: 2 });
+  const [startNode] = useState(initialStartNode || { row: height, col: 0 });
+  const [finishNode] = useState(initialFinishNode || { row: 0, col: width });
   
   const [startReached, setStartReached] = useState(false);
   const [finishReached, setFinishReached] = useState(false);

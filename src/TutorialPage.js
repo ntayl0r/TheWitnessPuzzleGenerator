@@ -19,7 +19,7 @@ const TutorialPage = () => {
     } catch (err) {
       setPuzzleData(null);
       setPuzzleIndex(null);
-      setError(`Oops... Puzzle ${index} not found.`);
+      setError(`Puzzle ${index} hasn't been added yet.`);
     }
   };
 
@@ -85,26 +85,56 @@ const TutorialPage = () => {
   // === Puzzle list view ===
   return (
     <div style={{ color: 'white', padding: '40px', textAlign: 'center' }}>
-      <h2>Choose a Puzzle</h2>
+      <h2>Color Puzzles</h2>
 
       <div style={{
         display: 'flex',
         flexWrap: 'wrap',
         justifyContent: 'center',
         gap: '10px',
-        marginTop: '20px'
+        marginTop: '20px',
+        marginBottom: '30px'
       }}>
         {Array.from({ length: 10 }, (_, i) => (
           <button
-            key={i}
+            key={i + 1}
             onClick={() => handleLoadPuzzle(i + 1)}
             style={{
               padding: '10px 15px',
               fontSize: '14px',
-              cursor: 'pointer'
+              cursor: 'pointer',
+              minWidth: '100px',
+              textAlign: 'center'
             }}
           >
             Puzzle {i + 1}
+          </button>
+        ))}
+      </div>
+
+      <h2>Star Puzzles</h2>
+
+      <div style={{
+        display: 'flex',
+        flexWrap: 'wrap',
+        justifyContent: 'center',
+        gap: '10px',
+        marginTop: '20px',
+        marginBottom: '30px'
+      }}>
+        {Array.from({ length: 10 }, (_, i) => (
+          <button
+            key={i + 11}
+            onClick={() => handleLoadPuzzle(i + 11)}
+            style={{
+              padding: '10px 15px',
+              fontSize: '14px',
+              cursor: 'pointer',
+              minWidth: '100px',
+              textAlign: 'center'
+            }}
+          >
+            Puzzle {i + 11}
           </button>
         ))}
       </div>

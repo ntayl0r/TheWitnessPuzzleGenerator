@@ -1,3 +1,4 @@
+// Updated Graph.js
 import React, { useState, useEffect } from 'react';
 
 const Grid = ({ width, height, initialSquares = [], initialNodes = [], startNode: initialStartNode, finishNode: initialFinishNode }) => {
@@ -7,7 +8,7 @@ const Grid = ({ width, height, initialSquares = [], initialNodes = [], startNode
   const [edgeColor, setEdgeColor] = useState('white'); 
   const [nodeHighlightColor, setNodeHighlightColor] = useState('white');
 
-  // Initialize colors and stars from initialSquares, or default to grey/false
+  // Initialize colors and stars from initialSquares, or default to grey/null
   const [colors, setColors] = useState(
     initialSquares.length > 0
       ? initialSquares.map(row => row.map(cell => cell.color || 'grey'))
@@ -16,13 +17,13 @@ const Grid = ({ width, height, initialSquares = [], initialNodes = [], startNode
 
   const [stars, setStars] = useState(
     initialSquares.length > 0
-      ? initialSquares.map(row => row.map(cell => cell.hasStar || false))
-      : Array.from({ length: height }).map(() => Array(width).fill(false))
+      ? initialSquares.map(row => row.map(cell => cell.starColor || null))
+      : Array.from({ length: height }).map(() => Array(width).fill(null))
   );
 
   // Manually set the Start and Finish nodes here (for nodes, not squares) - SOURCE and SINK
-  const [startNode] = useState(initialStartNode || { row: height, col: 0 });
-  const [finishNode] = useState(initialFinishNode || { row: 0, col: width });
+  const [startNode] = useState(initialStartNode || { row: height, col: 2 });
+  const [finishNode] = useState(initialFinishNode || { row: 0, col: 2 });
   
   const [startReached, setStartReached] = useState(false);
   const [finishReached, setFinishReached] = useState(false);
@@ -63,7 +64,7 @@ const Grid = ({ width, height, initialSquares = [], initialNodes = [], startNode
   // Save puzzle state to backend
   useEffect(() => {
     const squares = colors.map((row, i) =>
-      row.map((color, j) => ({ color, hasStar: stars[i][j] }))
+      row.map((color, j) => ({ color, starColor: stars[i][j] }))
     );
 
     const puzzleData = {
@@ -96,8 +97,6 @@ const Grid = ({ width, height, initialSquares = [], initialNodes = [], startNode
       }
     } else {
       if (isFinish) {
-
-        // Prevent duplicate finish node - self looping edges were occurring
         if (path.length === 0 || !(path[path.length - 1].row === row && path[path.length - 1].col === col)) {
           const updatedPath = [...path, { row, col }];
           setPath(updatedPath);
@@ -182,8 +181,11 @@ const Grid = ({ width, height, initialSquares = [], initialNodes = [], startNode
       });
     } else if (mode === 'star') {
       setStars((prevStars) => {
+        const cycle = [null, 'orange', 'green', 'purple'];
         const newStars = prevStars.map((r) => [...r]);
-        newStars[row][col] = !newStars[row][col];
+        const current = newStars[row][col];
+        const next = cycle[(cycle.indexOf(current) + 1) % cycle.length];
+        newStars[row][col] = next;
         return newStars;
       });
     }
@@ -221,8 +223,8 @@ const Grid = ({ width, height, initialSquares = [], initialNodes = [], startNode
               }}>
               {stars[r][c] && (
                 <img
-                  src="orange_star_extracted.png"
-                  alt="Star"
+                  src={`/${stars[r][c]}_star.png`}
+                  alt={`${stars[r][c]} star`}
                   style={{
                     position: 'absolute',
                     width: '75px',

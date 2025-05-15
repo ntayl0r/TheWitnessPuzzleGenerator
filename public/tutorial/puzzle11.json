@@ -1,0 +1,1 @@
+{"valid_solution": true, "region_count": 1, "height": 2, "width": 1, "startNode": {"row": 2, "col": 0}, "finishNode": {"row": 0, "col": 1}, "edges": [], "squares": [[{"color": "grey", "starColor": "orange"}], [{"color": "grey", "starColor": "orange"}]], "nodes": []}

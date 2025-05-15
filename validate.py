@@ -36,7 +36,6 @@ def bfs_over_squares(squares, edge_list):
                     row, col = queue.popleft()
                     square_edges = get_square_edges(row, col, cols)
 
-                    # My most beautiful line of code: edge check and neighbor traversal in one loop
                     for (dr, dc), edge in zip(directions, square_edges):
                         r, c = row + dr, col + dc
                         if 0 <= r < rows and 0 <= c < cols:
@@ -62,12 +61,18 @@ def color_rule(regions, squares):
             return False  # Region contains multiple distinct colors
     return True
 
-# Rule: A region must contain either exactly 0 or exactly 2 stars
+# Rule: A region must contain exactly 0 or exactly 2 stars of each color
 def star_rule(regions, squares):
     for region in regions:
-        star_count = sum(1 for r, c in region if squares[r][c].get("hasStar", False))
-        if star_count not in {0, 2}:
-            return False  # Region contains an invalid number of stars
+        star_counter = {}
+        for r, c in region:
+            star_color = squares[r][c].get("starColor")
+            if star_color:
+                star_counter[star_color] = star_counter.get(star_color, 0) + 1
+
+        for count in star_counter.values():
+            if count not in {0, 2}:
+                return False  # Star color appears in invalid quantity
     return True
 
 def validate_solution(squares, edge_list):

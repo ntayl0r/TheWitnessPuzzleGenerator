@@ -73,11 +73,13 @@ def save_puzzle():
             if isinstance(cell, str):
                 puzzle_state["squares"][r][c] = {
                     "color": cell,
-                    "starColor": None
+                    "starColor": None,
+                    "hasNot": False
                 }
             elif isinstance(cell, dict):
                 cell.setdefault("color", "grey")
                 cell.setdefault("starColor", None)
+                cell.setdefault("hasNot", False)
 
     puzzle_state["edges"] = build_edge_list(puzzle_state["nodes"], cols)
     return jsonify({"message": "Puzzle state saved"}), 200

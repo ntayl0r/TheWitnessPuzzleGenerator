@@ -4,11 +4,11 @@ import React, { useState, useEffect } from 'react';
 const Grid = ({ width, height, initialSquares = [], initialNodes = [], startNode: initialStartNode, finishNode: initialFinishNode }) => {
   const [path, setPath] = useState(initialNodes);
   const [isDrawing, setIsDrawing] = useState(false);
-  const [mode, setMode] = useState('color'); // 'color' or 'star'
+  const [mode, setMode] = useState('color'); // 'color' or 'star' or 'not'
   const [edgeColor, setEdgeColor] = useState('white'); 
   const [nodeHighlightColor, setNodeHighlightColor] = useState('white');
 
-  // Initialize colors and stars from initialSquares, or default to grey/null
+  // Initialize colors, stars, and not-symbols from initialSquares
   const [colors, setColors] = useState(
     initialSquares.length > 0
       ? initialSquares.map(row => row.map(cell => cell.color || 'grey'))
@@ -19,6 +19,12 @@ const Grid = ({ width, height, initialSquares = [], initialNodes = [], startNode
     initialSquares.length > 0
       ? initialSquares.map(row => row.map(cell => cell.starColor || null))
       : Array.from({ length: height }).map(() => Array(width).fill(null))
+  );
+
+  const [nots, setNots] = useState(
+    initialSquares.length > 0
+      ? initialSquares.map(row => row.map(cell => cell.hasNot || false))
+      : Array.from({ length: height }).map(() => Array(width).fill(false))
   );
 
   // Manually set the Start and Finish nodes here (for nodes, not squares) - SOURCE and SINK
@@ -37,6 +43,8 @@ const Grid = ({ width, height, initialSquares = [], initialNodes = [], startNode
         setMode('star');
       } else if (key === 'c') {
         setMode('color');
+      } else if (key === 'n') {
+        setMode('not');
       } else if (key === 'k') {
         if (isDrawing || path.length > 0) {
           setPath([]);
@@ -64,7 +72,11 @@ const Grid = ({ width, height, initialSquares = [], initialNodes = [], startNode
   // Save puzzle state to backend
   useEffect(() => {
     const squares = colors.map((row, i) =>
-      row.map((color, j) => ({ color, starColor: stars[i][j] }))
+      row.map((color, j) => ({
+        color,
+        starColor: stars[i][j],
+        hasNot: nots[i][j]
+      }))
     );
 
     const puzzleData = {
@@ -81,7 +93,7 @@ const Grid = ({ width, height, initialSquares = [], initialNodes = [], startNode
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(puzzleData)
     }).catch(console.error);
-  }, [path, colors, stars, height, width]);
+  }, [path, colors, stars, nots, height, width]);
 
   const handleNodeClick = async (row, col) => {
     const isStart = row === startNode.row && col === startNode.col;
@@ -188,6 +200,12 @@ const Grid = ({ width, height, initialSquares = [], initialNodes = [], startNode
         newStars[row][col] = next;
         return newStars;
       });
+    } else if (mode === 'not') {
+      setNots((prevNots) => {
+        const newNots = prevNots.map((r) => [...r]);
+        newNots[row][col] = !newNots[row][col];
+        return newNots;
+      });
     }
   };
 
@@ -232,6 +250,22 @@ const Grid = ({ width, height, initialSquares = [], initialNodes = [], startNode
                     top: '-2.5px',
                     left: '-2.5px',
                     pointerEvents: 'none',
+                  }}
+                />
+              )}
+              {nots[r][c] && (
+                <img
+                  src="/not_symbol.png"
+                  alt="Not Symbol"
+                  style={{
+                    position: 'absolute',
+                    width: '60px',
+                    height: '60px',
+                    top: '50%',
+                    left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    pointerEvents: 'none',
+                    opacity: 0.85  // optional: slight transparency
                   }}
                 />
               )}
